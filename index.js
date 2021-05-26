@@ -164,9 +164,11 @@ function dragDrop (elem, listeners) {
 
       if (items.length === 0) return
 
-      parallel(items.map(item => {
+      const siblingPaths = items.map(item => item.webkitGetAsEntry()?.fullPath)
+
+      parallel(items.map((item, index) => {
         return cb => {
-          processEntry(item.webkitGetAsEntry(), cb)
+          processEntry(item.webkitGetAsEntry(), '/', siblingPaths, index, cb)
         }
       }), (err, results) => {
         // This catches permission errors with file:// in Chrome. This should never
@@ -199,8 +201,14 @@ function dragDrop (elem, listeners) {
   }
 }
 
-function processEntry (entry, cb) {
+function processEntry (entry, parentPath, siblingPaths, siblingIndex, cb) {
   let entries = []
+
+  if (!entry) {
+    console.log(`parentPath: ${parentPath}`)
+    console.log(`siblingPaths: ${siblingPaths}`)
+    console.log(`siblingIndex: ${siblingIndex}`)
+  }
 
   if (entry.isFile) {
     entry.file(file => {
@@ -213,6 +221,8 @@ function processEntry (entry, cb) {
     })
   } else if (entry.isDirectory) {
     const reader = entry.createReader()
+    parentPath = entry.fullPath
+    siblingPaths = []
     readEntries(reader)
   }
 
@@ -228,9 +238,11 @@ function processEntry (entry, cb) {
   }
 
   function doneEntries () {
-    parallel(entries.map(entry => {
+    siblingPaths = entries.map(entry => entry?.fullPath)
+
+    parallel(entries.map((entry, index) => {
       return cb => {
-        processEntry(entry, cb)
+        processEntry(entry, parentPath, siblingPaths, index, cb)
       }
     }), (err, results) => {
       if (err) {
