@@ -164,7 +164,10 @@ function dragDrop (elem, listeners) {
 
       if (items.length === 0) return
 
-      const siblingPaths = items.map(item => item.webkitGetAsEntry()?.fullPath)
+      const siblingPaths = items.map(item => {
+        const entry = item.webkitGetAsEntry()
+        return entry && entry.fullPath
+      })
 
       parallel(items.map((item, index) => {
         return cb => {
@@ -238,7 +241,7 @@ function processEntry (entry, parentPath, siblingPaths, siblingIndex, cb) {
   }
 
   function doneEntries () {
-    siblingPaths = entries.map(entry => entry?.fullPath)
+    siblingPaths = entries.map(entry => entry && entry.fullPath)
 
     parallel(entries.map((entry, index) => {
       return cb => {
